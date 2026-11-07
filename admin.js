@@ -6,7 +6,7 @@ function pageSettings(q, parts) {
   if (!me().isAdmin) { location.hash = '#/home'; return; }
   if (parts[1]) AD.tab = parts[1];
   var T = [['general', 'ทั่วไปและกำหนดเวลา'], ['divisions', 'ฝ่ายและหัวหน้าฝ่าย'], ['users', 'ผู้ใช้และสิทธิ์'], ['items', 'หมวดและรายการ'], ['mail', 'อีเมล'], ['audit', 'ประวัติการใช้งาน']];
-  shell('<div class="page-head"><div><h1>ตั้งค่าระบบ</h1><p>เฉพาะผู้ดูแลระบบ ทุกการเปลี่ยนแปลงถูกบันทึกในประวัติการใช้งาน</p></div></div><div class="tabs" role="tablist">' + T.map(function (t) { return '<a role="tab" href="#/settings/' + t[0] + '" aria-selected="' + (AD.tab === t[0]) + '">' + t[1] + '</a>'; }).join('') + '</div><div id="adbody">' + loadingHtml() + '</div>', 'ตั้งค่า');
+  shell(pageHead('ผู้ดูแลระบบ', 'ตั้งค่าระบบ', 'ทุกการเปลี่ยนแปลงถูกบันทึกในประวัติการใช้งาน', '', 'settings') + '<div class="tabs" role="tablist">' + T.map(function (t) { return '<a role="tab" href="#/settings/' + t[0] + '" aria-selected="' + (AD.tab === t[0]) + '">' + t[1] + '</a>'; }).join('') + '</div><div id="adbody">' + loadingHtml() + '</div>', 'ตั้งค่า');
   (S.admin && AD.tab !== 'general' ? Promise.resolve(S.admin) : api('getAdmin')).then(function (a) { S.admin = a; drawAdmin(); }).catch(function (e) { $('#adbody').innerHTML = errorHtml(e.message); });
 }
 function drawAdmin() { ({ general: adGeneral, divisions: adDivisions, users: adUsers, items: adItems, mail: adMail, audit: adAudit }[AD.tab] || adGeneral)(); }
@@ -22,13 +22,12 @@ function adGeneral() {
     '<dt>รหัสผ่าน HIS (abs_login)</dt><dd>' + (c.his ? '<span class="st ok">เชื่อมแล้ว</span>' : c.setupPass ? '<span class="st change">ยังไม่เชื่อม · ใช้รหัสทดสอบ SETUP_PASS</span>' : '<span class="st red">ยังไม่เชื่อม</span>') + '</dd>' +
     '<dt>ข้อมูลบุคลากร HRMi (SmartAPI)</dt><dd>' + (c.smart ? '<span class="st ok">เชื่อมแล้ว</span>' : '<span class="st red">ยังไม่ตั้งค่า · ใช้ทะเบียนแพทย์แทน</span>') + '</dd>' +
     '<dt>โควตาอีเมลคงเหลือวันนี้</dt><dd>' + (c.quota >= 0 ? fmt(c.quota) + ' ฉบับ' : '–') + '</dd><dt>ทะเบียนแพทย์</dt><dd>' + fmt(S.admin.roster) + ' รายชื่อ</dd></dl></div></section>' +
-    '<section class="panel"><div class="panel-h"><div class="grow"><h2>กำหนดเวลา</h2><p>รอบ 1 แพทย์ให้ความเห็นและหัวหน้าฝ่ายรับรองส่ง · หลังปิดรับ HR และผู้บริหารลงผลพิจารณา · รอบ 2 ฝ่ายยืนยันร่างผลพิจารณา</p></div></div><div class="panel-b stack">' +
-    '<div class="grid2">' + dt('openAt', 'เปิดรับความเห็น (รอบ 1)') + dt('closeAt', 'ปิดรับ / กำหนดรับรองส่ง (รอบ 1)', 'หลังเวลานี้แพทย์และหัวหน้าฝ่ายแก้ไขไม่ได้ (ผู้ดูแลระบบยังแก้ได้)') + '</div>' +
-    '<label class="check"><input type="checkbox" data-sb="r2Enabled"' + (s.r2Enabled === 'TRUE' ? ' checked' : '') + '> เปิดใช้รอบ 2 (ฝ่ายยืนยันร่างผลพิจารณา)</label>' +
-    '<div class="grid2">' + dt('r2OpenAt', 'เริ่มรอบ 2') + dt('r2CloseAt', 'สิ้นสุดรอบ 2') + '</div></div></section>' +
+    '<section class="panel"><div class="panel-h"><div class="grow"><h2>กำหนดเวลา</h2><p>แพทย์กรอกได้ระหว่างวันเปิด–ปิด · หลังปิดรับ แพทย์และหัวหน้าฝ่ายแก้ไม่ได้ (ผู้ดูแลระบบยังแก้ได้)</p></div></div><div class="panel-b stack">' +
+    '<div class="g2">' + dt('openAt', 'เปิดให้กรอก') + dt('closeAt', 'ปิดรับ / กำหนดหัวหน้าฝ่ายยืนยัน') + '</div>' +
+    '</div></section>' +
     '<section class="panel"><div class="panel-h"><h2>ข้อความและการติดต่อ</h2></div><div class="panel-b stack">' +
-    '<div class="grid2">' + tx('roundName', 'ชื่อรอบการทบทวน') + tx('memoRef', 'อ้างอิงหนังสือเวียน') + '</div>' + tx('welcome', 'ข้อความต้อนรับในหน้าแรก', '', true) +
-    '<div class="grid3">' + tx('contactName', 'ผู้ประสานงาน HR') + tx('contactPhone', 'โทรภายใน') + tx('maxFileMb', 'ขนาดไฟล์แนบสูงสุด (MB)') + '</div>' + tx('contactText', 'ข้อความติดต่อ') + tx('siteUrl', 'ลิงก์ระบบ (ใช้ในอีเมล/QR)') + '</div></section>' +
+    tx('roundName', 'ชื่อรอบการทบทวน') + tx('welcome', 'ข้อความต้อนรับในหน้าแรก', '', true) +
+    '<div class="g3">' + tx('contactName', 'ผู้ประสานงาน HR') + tx('contactPhone', 'โทรภายใน') + tx('maxFileMb', 'ขนาดไฟล์แนบสูงสุด (MB)') + '</div>' + tx('contactText', 'ข้อความติดต่อ') + tx('siteUrl', 'ลิงก์ระบบ (ใช้ในอีเมล/QR)') + '</div></section>' +
     '<div class="row"><button class="btn primary lg" id="gsave">บันทึกการตั้งค่า</button></div></div>';
   $('#gsave').onclick = function () {
     var b = this, o = {}; $$('[data-s]').forEach(function (x) { o[x.dataset.s] = x.value; }); $$('[data-sb]').forEach(function (x) { o[x.dataset.sb] = x.checked; });
@@ -39,7 +38,7 @@ function adGeneral() {
 /* ---------- ฝ่าย ---------- */
 function adDivisions() {
   var D = S.admin.divisions.slice().sort(function (a, b) { return a.order - b.order; });
-  $('#adbody').innerHTML = '<div class="row wrap" style="margin-bottom:12px"><p class="muted grow" style="margin:0">หัวหน้าฝ่ายและผู้รับมอบ (รักษาการ) รับรองส่งได้ อีเมลใช้สำหรับประกาศ เตือน และสรุปรายวัน · ชื่อเรียกอื่นใช้จับคู่กับชื่อฝ่ายใน HRMi</p><button class="btn" id="dnew">' + ic('plus') + 'เพิ่มฝ่าย</button><button class="btn" id="dsync">' + ic('hist') + 'ดึงอีเมลจาก HRMi</button></div>' +
+  $('#adbody').innerHTML = '<div class="row wrap" style="margin-bottom:12px"><p class="muted grow" style="margin:0">หัวหน้าฝ่ายและผู้รับมอบ (รักษาการ) กด "ยืนยันส่ง HR" ได้ อีเมลใช้สำหรับประกาศ เตือน และสรุปรายวัน · ชื่อเรียกอื่นใช้จับคู่กับชื่อฝ่ายใน HRMi</p><button class="btn" id="dnew">' + ic('plus') + 'เพิ่มฝ่าย</button><button class="btn" id="dsync">' + ic('hist') + 'ดึงอีเมลจาก HRMi</button></div>' +
     '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>ฝ่าย</th><th>หนังสือเวียน</th><th>หัวหน้าฝ่าย</th><th>อีเมล</th><th>ผู้รับมอบ</th><th>สถานะ</th></tr></thead><tbody>' +
     D.map(function (d) { return '<tr class="click" data-d="' + d.id + '"><td><b>' + esc(d.name) + '</b><div class="tiny muted">' + esc(d.id) + (d.aliases ? ' · ' + esc(d.aliases) : '') + '</div></td><td>' + (d.required ? '<span class="st own">ต้องส่ง</span>' : '<span class="faint small">ร่วมเสนอได้</span>') + '</td><td class="small">' + esc(d.headName || '') + '<div class="tiny muted">' + esc(d.headEmp || 'ยังไม่ระบุ') + '</div></td><td class="small">' + (d.headEmail ? esc(d.headEmail) : '<span class="st red">ไม่มีอีเมล</span>') + (d.ccEmails ? '<div class="tiny muted">สำเนา ' + esc(d.ccEmails) + '</div>' : '') + '</td><td class="small">' + esc(d.delegates || '–') + '</td><td>' + (d.active ? '<span class="st ok">ใช้งาน</span>' : '<span class="st none">ปิด</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>';
   $$('[data-d]').forEach(function (r) { r.onclick = function () { divForm(D.filter(function (x) { return x.id === r.dataset.d; })[0]); }; });
@@ -53,9 +52,9 @@ function divForm(d) {
     '<label class="f"><span>ชื่อฝ่าย</span><input class="in" id="f_name" value="' + esc(d.name) + '"></label><div class="grid2"><label class="f"><span>ชื่อย่อ</span><input class="in" id="f_short" value="' + esc(d.short) + '"></label><label class="f"><span>ชื่อเรียกอื่นใน HRMi</span><input class="in" id="f_alias" value="' + esc(d.aliases || '') + '" placeholder="คั่นด้วย |"></label></div>' +
     '<div class="grid2"><label class="f"><span>รหัสหัวหน้าฝ่าย</span><input class="in" id="f_head" inputmode="numeric" maxlength="7" value="' + esc(d.headEmp) + '"></label><label class="f"><span>ชื่อหัวหน้าฝ่าย</span><input class="in" id="f_hname" value="' + esc(d.headName) + '"></label></div>' +
     '<label class="f"><span>อีเมลหัวหน้าฝ่าย</span><input class="in" id="f_mail" type="email" value="' + esc(d.headEmail) + '"></label>' +
-    '<label class="f"><span>ผู้รับมอบ/รักษาการ (รหัส 7 หลัก คั่นด้วย ,)</span><input class="in" id="f_del" value="' + esc(d.delegates || '') + '"><small>รับรองส่งแทนหัวหน้าฝ่ายได้ · อีเมลของผู้รับมอบใช้ตามข้อมูลผู้ใช้</small></label>' +
+    '<label class="f"><span>ผู้รับมอบ/รักษาการ (รหัส 7 หลัก คั่นด้วย ,)</span><input class="in" id="f_del" value="' + esc(d.delegates || '') + '"><small>กด "ยืนยันส่ง HR" แทนหัวหน้าฝ่ายได้ · อีเมลของผู้รับมอบใช้ตามข้อมูลผู้ใช้</small></label>' +
     '<label class="f"><span>อีเมลสำเนา (ถ้ามี)</span><input class="in" id="f_cc" value="' + esc(d.ccEmails || '') + '" placeholder="เช่น เลขาฝ่าย"></label>' +
-    '<div class="row wrap" style="gap:20px"><label class="check"><input type="checkbox" id="f_req"' + (d.required ? ' checked' : '') + '> ฝ่ายตามหนังสือเวียน (ต้องรับรองส่ง · ส่งเตือนอัตโนมัติ)</label><label class="check"><input type="checkbox" id="f_act"' + (d.active ? ' checked' : '') + '> เปิดใช้งาน</label></div><div id="ferr"></div></div>' +
+    '<div class="row wrap" style="gap:20px"><label class="check"><input type="checkbox" id="f_req"' + (d.required ? ' checked' : '') + '> ฝ่ายตามหนังสือเวียน (ติดตามการยืนยัน · ส่งเตือนอัตโนมัติ)</label><label class="check"><input type="checkbox" id="f_act"' + (d.active ? ' checked' : '') + '> เปิดใช้งาน</label></div><div id="ferr"></div></div>' +
     '<div class="act"><button class="btn" data-x>ยกเลิก</button><button class="btn primary" data-ok>บันทึก</button></div>');
   m.querySelector('[data-x]').onclick = closeModal;
   m.querySelector('[data-ok]').onclick = function () {
@@ -89,7 +88,7 @@ function userForm(u) {
     '<label class="f"><span>ฝ่ายที่ให้ความเห็น</span><select class="in" id="u_div">' + divOpts + '</select></label><label class="check"><input type="checkbox" id="u_lock"' + (u.divLock ? ' checked' : '') + '> ล็อกฝ่ายนี้ (ไม่เปลี่ยนตาม HRMi)</label>' +
     '<label class="f"><span>อีเมล</span><input class="in" id="u_mail" type="email" value="' + esc(u.email || '') + '"></label>' +
     '<div><span class="f-label">สิทธิ์</span><div class="row wrap" style="gap:18px"><label class="check"><input type="checkbox" id="u_admin"' + (u.roles.indexOf('admin') >= 0 ? ' checked' : '') + '> ผู้ดูแลระบบ (HR)</label><label class="check"><input type="checkbox" id="u_exec"' + (u.roles.indexOf('exec') >= 0 ? ' checked' : '') + '> ผู้บริหาร (เห็นทุกฝ่าย ลงผลพิจารณา)</label></div></div>' +
-    '<div><span class="f-label">ผู้ประสานงานของฝ่าย (บันทึกแทนแพทย์ เตรียมข้อสรุป)</span><div class="row wrap" style="gap:6px 16px">' + S.boot.divisions.map(function (d) { return '<label class="check small"><input type="checkbox" class="u_co" value="' + d.id + '"' + (u.coordDivs.indexOf(d.id) >= 0 ? ' checked' : '') + '> ' + esc(d.short) + '</label>'; }).join('') + '</div></div>' +
+    '<div><span class="f-label">ผู้ประสานงานของฝ่าย (กรอกแผ่นงานของฝ่ายแทนแพทย์ได้)</span><div class="row wrap" style="gap:6px 16px">' + S.boot.divisions.map(function (d) { return '<label class="check small"><input type="checkbox" class="u_co" value="' + d.id + '"' + (u.coordDivs.indexOf(d.id) >= 0 ? ' checked' : '') + '> ' + esc(d.short) + '</label>'; }).join('') + '</div></div>' +
     (!u.hasPw ? '<label class="check"><input type="checkbox" id="u_local"> สร้างบัญชีระบบ (สำหรับผู้ที่ไม่มีบัญชี HIS) และออกรหัสผ่านชั่วคราว</label>' : '') +
     '<label class="check"><input type="checkbox" id="u_act"' + (u.active ? ' checked' : '') + '> เปิดใช้งาน</label><div id="uerr"></div></div>' +
     '<div class="act">' + (u.hasPw ? '<button class="btn ghost" id="u_reset" style="margin-right:auto">' + ic('key') + 'ออกรหัสผ่านชั่วคราวใหม่</button>' : '') + '<button class="btn" data-x>ยกเลิก</button><button class="btn primary" data-ok>บันทึก</button></div>');
@@ -109,7 +108,7 @@ function userForm(u) {
   };
 }
 function showTemp(t) {
-  var m = modal('<h2>รหัสผ่านชั่วคราว</h2><p class="muted">แจ้งรหัสนี้แก่ผู้ใช้โดยตรง (ระบบจะไม่แสดงอีก) ผู้ใช้เข้าที่แท็บ <b>บัญชีผู้ประสานงาน</b> และต้องตั้งรหัสผ่านใหม่ในครั้งแรก</p>' +
+  var m = modal('<h2>รหัสผ่านชั่วคราว</h2><p class="muted">แจ้งรหัสนี้แก่ผู้ใช้โดยตรง (ระบบจะไม่แสดงอีก) ผู้ใช้เข้าที่แท็บ <b>บัญชีระบบ (ไม่มี HIS)</b> และต้องตั้งรหัสผ่านใหม่ในครั้งแรก</p>' +
     '<div class="ratebox"><div><span>เลขประจำตัว</span><b>' + esc(t.emp) + '</b></div><div><span>รหัสผ่านชั่วคราว</span><b style="letter-spacing:.06em">' + esc(t.password) + '</b></div></div><div class="act"><button class="btn" id="cpy">คัดลอก</button><button class="btn primary" data-ok>เสร็จแล้ว</button></div>');
   $('#cpy').onclick = function () { try { navigator.clipboard.writeText('SOMDEJ CORE ' + (B().settings.siteUrl || '') + '\nเลขประจำตัว ' + t.emp + '\nรหัสผ่านชั่วคราว ' + t.password); toast('คัดลอกแล้ว'); } catch (e) { } };
   m.querySelector('[data-ok]').onclick = function () { closeModal(); refreshBoot().then(drawAdmin); };
@@ -118,7 +117,7 @@ function showTemp(t) {
 /* ---------- หมวดและรายการ ---------- */
 function adItems() {
   var cats = S.boot.categories;
-  $('#adbody').innerHTML = '<section class="panel"><div class="panel-h"><div class="grow"><h2>ฝ่ายที่สรุปแต่ละหมวด</h2><p>หัวหน้าฝ่ายต้องสรุปทุกรายการในหมวดของฝ่ายก่อนรับรองส่ง · "ทุกฝ่าย" = หมวดกลาง ฝ่ายใดก็ให้ความเห็นได้ (สรุปเฉพาะรายการที่มีข้อเสนอ)</p></div></div>' +
+  $('#adbody').innerHTML = '<section class="panel"><div class="panel-h"><div class="grow"><h2>ฝ่ายที่สรุปแต่ละหมวด</h2><p>ระบบเปิดหมวดของฝ่ายให้แพทย์เห็นก่อนในแผ่นงาน · "ทุกฝ่าย" = หมวดกลาง</p></div></div>' +
     '<div class="tbl-wrap" style="border:0;border-radius:0"><table class="tbl"><thead><tr><th>หมวด</th><th>ฝ่ายที่สรุป</th><th></th></tr></thead><tbody>' + cats.map(function (c) {
       return '<tr><td><b>' + catLabel(c.no) + '</b> ' + esc(c.name) + '</td><td><select class="in" data-cat="' + c.no + '" style="min-width:200px"><option value="ALL"' + (c.owners[0] === 'ALL' ? ' selected' : '') + '>ทุกฝ่าย (หมวดกลาง)</option>' + S.boot.divisions.map(function (d) { return '<option value="' + d.id + '"' + (c.owners[0] === d.id ? ' selected' : '') + '>' + esc(d.name) + '</option>'; }).join('') + '</select></td><td><button class="btn sm" data-csave="' + c.no + '">บันทึก</button></td></tr>';
     }).join('') + '</tbody></table></div></section>' +
@@ -150,14 +149,14 @@ function adMail() {
   var s = S.admin.settings, sw = function (k, l, h) { return '<label class="check"><input type="checkbox" data-sb="' + k + '"' + (s[k] === 'TRUE' ? ' checked' : '') + '> <span><b>' + l + '</b>' + (h ? '<br><span class="muted small">' + h + '</span>' : '') + '</span></label>'; };
   $('#adbody').innerHTML = '<div class="stack"><section class="panel"><div class="panel-h"><div class="grow"><h2>การส่งอีเมล</h2><p>ส่งจากบัญชีที่ติดตั้งระบบ (hr-somdej) โควตาคงเหลือวันนี้ ' + fmt(S.admin.connection.quota) + ' ฉบับ</p></div></div><div class="panel-b stack">' +
     sw('mailOn', 'เปิดการส่งอีเมลทั้งหมด') + sw('mailAnnounce', 'ประกาศเปิดระบบ', 'กดส่งเองที่หน้า ภาพรวมทุกฝ่าย') +
-    sw('mailRemind', 'เตือนหัวหน้าฝ่ายที่ยังไม่รับรองส่ง', 'ส่งอัตโนมัติก่อนปิดรับตามจำนวนวันด้านล่าง (ฝ่ายตามหนังสือเวียน + ฝ่ายอื่นที่มีความเห็นแล้ว) และกดส่งเองได้') +
+    sw('mailRemind', 'เตือนหัวหน้าฝ่ายที่ยังไม่ยืนยัน', 'ส่งอัตโนมัติก่อนปิดรับตามจำนวนวันด้านล่าง (ฝ่ายตามหนังสือเวียน + ฝ่ายอื่นที่มีการกรอกแล้ว) และกดส่งเองได้ที่หน้าภาพรวม') +
     '<div class="grid2" style="padding-left:28px"><label class="f"><span>ก่อนปิดรับ (วัน คั่นด้วย ,)</span><input class="in" data-s="mailRemindDays" value="' + esc(s.mailRemindDays) + '"></label><label class="f"><span>เวลาส่ง (ชั่วโมง 0–23)</span><input class="in" data-s="mailRemindHour" value="' + esc(s.mailRemindHour) + '"></label></div>' +
-    sw('mailDigest', 'สรุปความเคลื่อนไหวรายวันถึงหัวหน้าฝ่าย', 'เฉพาะวันที่มีแพทย์ในฝ่ายเสนอเปลี่ยน/ยกเลิก/เพิ่ม') + '<div style="padding-left:28px;max-width:260px"><label class="f"><span>เวลาส่ง (ชั่วโมง)</span><input class="in" data-s="mailDigestHour" value="' + esc(s.mailDigestHour) + '"></label></div>' +
-    sw('mailCertify', 'แจ้งฝ่ายทรัพยากรบุคคลเมื่อฝ่ายรับรองส่ง') + '<label class="f"><span>อีเมล HR ที่รับแจ้ง (คั่นด้วย ,)</span><input class="in" data-s="hrEmails" value="' + esc(s.hrEmails) + '" placeholder="ว่างไว้ = อีเมลของผู้ดูแลระบบ"></label>' +
+    sw('mailDigest', 'สรุปความเคลื่อนไหวรายวันถึงหัวหน้าฝ่าย', 'เฉพาะวันที่มีการแก้ไข/ยกเลิก/เสนอใหม่ในฝ่าย') + '<div style="padding-left:28px;max-width:260px"><label class="f"><span>เวลาส่ง (ชั่วโมง)</span><input class="in" data-s="mailDigestHour" value="' + esc(s.mailDigestHour) + '"></label></div>' +
+    sw('mailCertify', 'แจ้งฝ่ายทรัพยากรบุคคลเมื่อหัวหน้าฝ่ายยืนยัน') + '<label class="f"><span>อีเมล HR ที่รับแจ้ง (คั่นด้วย ,)</span><input class="in" data-s="hrEmails" value="' + esc(s.hrEmails) + '" placeholder="ว่างไว้ = อีเมลของผู้ดูแลระบบ"></label>' +
     '<label class="f"><span>ชื่อผู้ส่ง</span><input class="in" data-s="mailSenderName" value="' + esc(s.mailSenderName) + '"></label>' +
     '<div class="row wrap"><button class="btn primary" id="msave">บันทึก</button><span class="grow"></span><input class="in" id="mt" placeholder="อีเมลทดสอบ" style="max-width:260px" value="' + esc(me().email || '') + '"><button class="btn" id="mtest">ส่งทดสอบ</button></div></div></section>' +
     '<section class="panel"><div class="panel-h"><h2>ประวัติการส่ง</h2></div><div class="tbl-wrap" style="border:0;border-radius:0"><table class="tbl"><thead><tr><th>เวลา</th><th>ชนิด</th><th>ผู้รับ</th><th>หัวเรื่อง</th><th>ผล</th></tr></thead><tbody>' +
-    (S.admin.mail.length ? S.admin.mail.map(function (x) { return '<tr><td class="small nowrap">' + esc(thDT(x.at)) + '</td><td class="small">' + esc({ announce: 'ประกาศ', remind: 'เตือน', digest: 'สรุปรายวัน', certify: 'แจ้งรับรองส่ง', test: 'ทดสอบ' }[x.kind] || x.kind) + '</td><td class="small">' + esc(x.to) + '</td><td class="small">' + esc(x.subject) + '</td><td>' + (x.status === 'sent' ? '<span class="st ok">ส่งแล้ว</span>' : '<span class="st red">' + esc(x.status) + '</span>') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="muted">ยังไม่มี</td></tr>') + '</tbody></table></div></section></div>';
+    (S.admin.mail.length ? S.admin.mail.map(function (x) { return '<tr><td class="small nowrap">' + esc(thDT(x.at)) + '</td><td class="small">' + esc({ announce: 'ประกาศ', remind: 'เตือน', digest: 'สรุปรายวัน', certify: 'แจ้งยืนยัน', test: 'ทดสอบ' }[x.kind] || x.kind) + '</td><td class="small">' + esc(x.to) + '</td><td class="small">' + esc(x.subject) + '</td><td>' + (x.status === 'sent' ? '<span class="st ok">ส่งแล้ว</span>' : '<span class="st red">' + esc(x.status) + '</span>') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="muted">ยังไม่มี</td></tr>') + '</tbody></table></div></section></div>';
   $('#msave').onclick = function () { var b = this, o = {}; $$('[data-s]').forEach(function (x) { o[x.dataset.s] = x.value; }); $$('[data-sb]').forEach(function (x) { o[x.dataset.sb] = x.checked; }); busy(b, true); apiW('saveSettings', { settings: o }).then(function (a) { return afterAdmin(a, 'บันทึกการตั้งค่าอีเมลแล้ว'); }).catch(function (e) { busy(b, false); toast(e.message, true); }); };
   $('#mtest').onclick = function () { var b = this; busy(b, true); api('mailTest', { to: $('#mt').value }).then(function (r) { busy(b, false); toast(r.ok ? 'ส่งอีเมลทดสอบแล้ว' : 'ส่งไม่สำเร็จ ดูประวัติการส่ง', !r.ok); return api('getAdmin'); }).then(function (a) { S.admin = a; adMail(); }).catch(function (e) { busy(b, false); toast(e.message, true); }); };
 }
